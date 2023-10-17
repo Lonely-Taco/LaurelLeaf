@@ -58,6 +58,14 @@ def remove_string_from_links(html_content, string_to_remove):
             link['href'] = link['href'].replace(string_to_remove, '')
     return str(soup)
 
+def remove_string_from_images(html_content, string_to_remove):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    images = soup.find_all('img')
+    for image in images:
+        if string_to_remove in image.get('src', ''):
+            image['src'] = image.get('src', '').replace(string_to_remove, '')
+    return str(soup)
+
 def process_files(folder):
     html_files = [f for f in os.listdir(folder) if f.endswith(".html")]
     
@@ -78,7 +86,9 @@ def process_files(folder):
         modified_content = remove_head_scripts(html_content)
         modified_content = remove_nav_and_div(modified_content)
         modified_content = remove_string_from_links(modified_content, base_filename)
+        modified_content = remove_string_from_images(modified_content, base_filename)
         
+        print(base_filename)
         with open(file_path, 'w', encoding='utf-8') as file:
             file.write(modified_content)
             
