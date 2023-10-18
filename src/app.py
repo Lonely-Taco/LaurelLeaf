@@ -7,9 +7,6 @@ import shutil
 from bs4 import BeautifulSoup
 import re
 
-remove_urls = True
-keep_links_to_github_repos = True
-
 # Create the root window
 root = tk.Tk()
 root.title('Choose Folder')
@@ -17,14 +14,6 @@ root.resizable(False,False)
 
 window_width = 500
 window_height = 250
-
-def toggle_remove_urls():
-    global remove_urls
-    remove_urls = not remove_urls
-
-def toggle_remove_github_urls():
-    global keep_links_to_github_repos
-    keep_links_to_github_repos = not keep_links_to_github_repos
 
 def center_window(root, width, height):
     screen_width = root.winfo_screenwidth()
@@ -89,7 +78,7 @@ def remove_url_from_anchor_tags(html_content):
         # Filter links that match the GitHub repository pattern and keep them
     for link in links:
         href = link.get('href')
-        if href and re.match(github_pattern, href) and keep_links_to_github_repos:
+        if href and re.match(github_pattern, href) and skip_github_urls_var.get():
             continue  # Keep the link
         else:
             link['href'] = ''
@@ -119,7 +108,7 @@ def process_files(folder):
         modified_content = remove_string_from_links(modified_content, base_filename)
         modified_content = remove_string_from_images(modified_content, base_filename)
         
-        if check_can_remove_external_links:
+        if remove_urls_var.get():
             modified_content = remove_url_from_anchor_tags(modified_content)
             
         print(base_filename)
@@ -151,19 +140,27 @@ def delete_subfolder_with_confirmation(subfolder_path):
     else:
         print(f"Deletion of '{subfolder_path}' canceled.")
 
+def confirm_selection(folder):
+    confirm_selection = askokcancel("Confirmation", f"Confirm path: '{folder}'")
+    return confirm_selection
+    
+
 def select_folder():
     folder = fd.askdirectory(
         title='Select a Folder',
         initialdir='/'
     )
-
     if folder:
+        folder_path_label.config(text=f"Chosen Folder: {folder}")  # Update the label with the chosen folder path
+
+    if folder and confirm_selection(folder):
+        
         process_files(folder)
         destination_folder = os.path.join(folder, "_files")
         subfolders = get_subfolders(folder)
         if subfolders:
             for subfolder in subfolders:
-                 if subfolder != "_files": 
+                 if subfolder != "_files" and not skip_subfolders_var.get(): 
                     files_path = os.path.join(folder, subfolder)
                     files = get_files(files_path)
                     copy_files(files, files_path ,destination_folder)
@@ -182,20 +179,20 @@ def select_folder():
             message=f'Process complete.'
         )   
     
+skip_subfolders_var = tk.BooleanVar(value=False)  # Default value is False
+remove_urls_var = tk.BooleanVar(value=True)  # Default value is False
+skip_github_urls_var = tk.BooleanVar(value=True)  # Default value is False
+
 check_can_remove_external_links = ttk.Checkbutton(
     root,
     text='Remove links to external sources?',
-    onvalue=True, 
-    offvalue=False, 
-    command=toggle_remove_urls,
+   variable=remove_urls_var
 )
 
 check_can_remove_github_links = ttk.Checkbutton(
     root,
-    text='Remove links to GitHub?',
-    onvalue=True, 
-    offvalue=False, 
-    command=toggle_remove_github_urls,
+    text='Skip links to GitHub?',
+    variable=skip_github_urls_var,
 )
 
 open_button = ttk.Button(
@@ -204,9 +201,25 @@ open_button = ttk.Button(
     command=select_folder
 )
 
-check_can_remove_external_links.pack()
-check_can_remove_github_links.pack()
-open_button.pack(expand=True)
+
+skip_subfolders_checkbox = ttk.Checkbutton(
+    root,
+    text='Skip Subfolders',
+    variable=skip_subfolders_var,
+)
+
+
+check_can_remove_external_links.grid(row=0, column=0, sticky="w", padx=10)
+check_can_remove_github_links.grid(row=1, column=0, sticky="w", padx=10)
+skip_subfolders_checkbox.grid(row=2, column=0, sticky="w", padx=10)
+
+# Create a Label widget to display the chosen folder path
+folder_path_label = ttk.Label(root, text="Chosen Folder: None")
+folder_path_label.grid(row=9, column=0, columnspan=5, padx=10)
+
+tk.Label(root, text="").grid(row=3)
+
+open_button.grid(columnspan=4)
 
 center_window(root, window_width, window_height)
 
