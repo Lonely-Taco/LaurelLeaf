@@ -5,6 +5,10 @@ from tkinter.messagebox import showinfo, askokcancel
 import os
 import shutil
 from bs4 import BeautifulSoup
+import re
+
+remove_urls = True
+keep_links_to_github_repos = True
 
 # Create the root window
 root = tk.Tk()
@@ -13,6 +17,14 @@ root.resizable(False,False)
 
 window_width = 500
 window_height = 250
+
+def toggle_remove_urls():
+    global remove_urls
+    remove_urls = not remove_urls
+
+def toggle_remove_github_urls():
+    global keep_links_to_github_repos
+    keep_links_to_github_repos = not keep_links_to_github_repos
 
 def center_window(root, width, height):
     screen_width = root.winfo_screenwidth()
@@ -67,10 +79,21 @@ def remove_string_from_images(html_content, string_to_remove):
     return str(soup)
 
 def remove_url_from_anchor_tags(html_content):
+        
+    github_pattern = r'https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+'
+    
+   # Find all links in the modified content
     soup = BeautifulSoup(html_content, 'html.parser')
-    anchors = soup.find_all('a')
-    for anchor in anchors:
-        anchors['href'] = ''
+    links = soup.find_all('a')
+        
+        # Filter links that match the GitHub repository pattern and keep them
+    for link in links:
+        href = link.get('href')
+        if href and re.match(github_pattern, href) and keep_links_to_github_repos:
+            continue  # Keep the link
+        else:
+            link['href'] = ''
+    return str(soup)
 
 def process_files(folder):
     html_files = [f for f in os.listdir(folder) if f.endswith(".html")]
@@ -80,6 +103,8 @@ def process_files(folder):
     if not os.path.exists(files_folder):
         os.makedirs(files_folder)
     
+    
+     
     for file_name in html_files:
         file_path = os.path.join(folder, file_name)
         
@@ -93,8 +118,10 @@ def process_files(folder):
         modified_content = remove_nav_and_div(modified_content)
         modified_content = remove_string_from_links(modified_content, base_filename)
         modified_content = remove_string_from_images(modified_content, base_filename)
-        modified_content = remove_url_from_anchor_tags(modified_content)
         
+        if check_can_remove_external_links:
+            modified_content = remove_url_from_anchor_tags(modified_content)
+            
         print(base_filename)
         
         with open(file_path, 'w', encoding='utf-8') as file:
@@ -154,6 +181,22 @@ def select_folder():
             title='Processing Complete',
             message=f'Process complete.'
         )   
+    
+check_can_remove_external_links = ttk.Checkbutton(
+    root,
+    text='Remove links to external sources?',
+    onvalue=True, 
+    offvalue=False, 
+    command=toggle_remove_urls,
+)
+
+check_can_remove_github_links = ttk.Checkbutton(
+    root,
+    text='Remove links to GitHub?',
+    onvalue=True, 
+    offvalue=False, 
+    command=toggle_remove_github_urls,
+)
 
 open_button = ttk.Button(
     root,
@@ -161,6 +204,8 @@ open_button = ttk.Button(
     command=select_folder
 )
 
+check_can_remove_external_links.pack()
+check_can_remove_github_links.pack()
 open_button.pack(expand=True)
 
 center_window(root, window_width, window_height)
