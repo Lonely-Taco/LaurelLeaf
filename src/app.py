@@ -7,15 +7,32 @@ import shutil
 from bs4 import BeautifulSoup
 import re
 import pdfkit
+import json
 
-# Create the root window
 root = tk.Tk()
-root.title('Choose Folder')
+root.title('LaurelLeaf')
 root.resizable(False,False)
 
 window_width = 600
 window_height = 400
 
+def load_settings():
+    settings = {}
+    try:
+        with open("settings.json", "r") as file:
+            settings = json.load(file)
+            print(settings)
+    except FileNotFoundError:
+        pass
+    return settings
+
+def save_settings(settings):
+   config = {
+        "wkhtmltopdf_path": settings,
+   }
+   with open("settings.json", "w") as file:
+        json.dump(config, file, indent=4)
+        
 def center_window(root, width, height):
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
@@ -76,9 +93,8 @@ def remove_style_tags_with_data_emotion(html_content):
 
     return str(soup)
 
-#adding a new div after body to prevent wkhtmltopdf from createing blank pages.
 def add_extra_div_after_body(html_content):
-    soup = BeautifulSoup(html_content)    
+    soup = BeautifulSoup(html_content, 'html.parser')    
     body = soup.find('body')
     
     if body:
@@ -176,32 +192,22 @@ def remove_string_from_images(html_content, string_to_remove):
     return str(soup)
 
 def remove_string_from_script_tags(html_content, string_to_remove):
-
-    # Parse the HTML content with BeautifulSoup
     soup = BeautifulSoup(html_content, 'html.parser')
-
-    # Find all script tags
     script_tags = soup.find_all('script')
 
     for script_tag in script_tags:
         src = script_tag.get('src', '')
         if string_to_remove in src:
-            # Replace the old src with the new src
             script_tag['src'] = src.replace(string_to_remove, '')
 
     print(f"Changed: {len(script_tags)} script tags")
     
     return str(soup)
 
-def remove_url_from_anchor_tags(html_content):
-        
+def remove_url_from_anchor_tags(html_content):   
     github_pattern = r'https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+'
-    
-   # Find all links in the modified content
     soup = BeautifulSoup(html_content, 'html.parser')
     links = soup.find_all('a')
-        
-        # Filter links that match the GitHub repository pattern and keep them
     for link in links:
         href = link.get('href')
         if href and re.match(github_pattern, href) and skip_github_urls_var.get():
@@ -214,8 +220,6 @@ def remove_url_from_anchor_tags(html_content):
 
 def process_files(folder):
     html_files = [f for f in os.listdir(folder) if f.endswith(".html")]
-    
-    # Create the "_files" folder if it doesn't exist
     files_folder = os.path.join(folder, "_files")
     if not os.path.exists(files_folder):
         os.makedirs(files_folder)
@@ -224,8 +228,6 @@ def process_files(folder):
      
     for file_name in html_files:
         file_path = os.path.join(folder, file_name)
-        
-        # Extract the filename without the ".html" extension
         base_filename = os.path.splitext(file_name)[0]
         
         with open(file_path, 'r', encoding='utf-8') as file:
@@ -269,7 +271,6 @@ def copy_files(files, source_folder, destination_folder):
         shutil.copy2(source_file, destination_file)  # Copy the file
         
 def delete_subfolder_with_confirmation(subfolder_path):
-    # Ask the user for confirmation before deleting the subfolder
     confirm_delete = askokcancel("Confirmation", f"Do you want to delete '{subfolder_path}'?")
     if confirm_delete:
         shutil.rmtree(subfolder_path)
@@ -281,6 +282,14 @@ def confirm_selection(folder):
     return confirm_selection
     
 def convert_to_pdf(input_folder, output_folder, wkhtmltopdf_path):
+    # settings = load_settings()
+    # if 'wkhtmltopdf_path' not in settings:
+    #     showinfo(
+    #             title='No wkhtmltopdf',
+    #             message=f'No wkhtmltopdf executable found'
+    #         )
+    #     return
+    
     options = {
         'page-size': 'Letter',
         'margin-top': '10mm',
@@ -294,8 +303,7 @@ def convert_to_pdf(input_folder, output_folder, wkhtmltopdf_path):
         '--minimum-font-size': '20',
         '--quiet': None,
     }
-
-    # Specify the configuration with the 'wkhtmltopdf' path
+    # wkhtmltopdf_path = settings["wkhtmltopdf_path"]
     configuration = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
 
     html_files = [f for f in os.listdir(input_folder) if f.endswith(".html")]
@@ -306,6 +314,7 @@ def convert_to_pdf(input_folder, output_folder, wkhtmltopdf_path):
 
         try:
             pdfkit.from_file(input_path, output_path, configuration=configuration, options=options)
+            print(f"{html_file} to PDF complete")
         except Exception as e:
             e = e.with_traceback(e.__traceback__)
           
@@ -319,8 +328,7 @@ def convert_to_pdf(input_folder, output_folder, wkhtmltopdf_path):
 def select_input_folder():
     global selected_input_folder
     global asset_path
-    selected_input_folder = fd.askdirectory(title="Select Input Folder", initialdir="/")   
-    # asset_path = fd.askdirectory(title="Select Input Folder", initialdir="/")   
+    selected_input_folder = fd.askdirectory(title="Select Input Folder", initialdir="/")    
     if selected_input_folder:
         input_folder_entry.delete(0, tk.END)
         input_folder_entry.insert(0, selected_input_folder)
@@ -332,10 +340,7 @@ def select_output_folder():
         output_folder_entry.delete(0, tk.END)
         output_folder_entry.insert(0, selected_output_folder)
         
-def select_folder():
-    global selected_input_folder
-    global selected_output_folder
-    
+def select_folder():  
     folder = fd.askdirectory(
         title='Select a Folder',
         initialdir='/'
@@ -379,82 +384,128 @@ def select_folder():
             message=f'Process complete.'
         )   
     
-skip_subfolders_var = tk.BooleanVar(value=False)  # Default value is False
-remove_urls_var = tk.BooleanVar(value=True)  # Default value is False
-skip_github_urls_var = tk.BooleanVar(value=True)  # Default value is False
-
-open_button = ttk.Button(
-    root,
-    text='Select a Folder',
-    command=select_folder
-)
-
-check_can_remove_external_links = ttk.Checkbutton(
-    root,
-    text='Remove links to external sources?',
-   variable=remove_urls_var
-)
-
-check_can_remove_github_links = ttk.Checkbutton(
-    root,
-    text='Skip links to GitHub?: only matters if remove links is checked.',
-    variable=skip_github_urls_var,
-)
-
-skip_subfolders_checkbox = ttk.Checkbutton(
-    root,
-    text='Skip Subfolders: If checked, you will be prompted before deletion.',
-    variable=skip_subfolders_var,
-)
-convert_button = ttk.Button(
-    root,
-    text='Convert to PDF',
-    command=lambda: convert_to_pdf(selected_input_folder, selected_output_folder, wkhtmltopdf_path="/usr/local/bin/wkhtmltopdf")
-)
 
 
-input_folder_entry = ttk.Entry(root)
-output_folder_entry = ttk.Entry(root)
 
 
-tk.Label(root, text="Step: 1 choose folder to clean").grid(row=1, sticky="w")
 
-# Create a Label widget to display the chosen folder path
-folder_path_label = ttk.Label(root, text="Chosen Folder: None")
+def create_settings_tab(tab_control):
+    settings_tab = ttk.Frame(tab_control)
+    tab_control.add(settings_tab, text="Settings")
+
+    # Create and pack or grid your widgets for settings in the settings_tab frame.
+    # For example, you can add an entry field for wkhtmltopdf_path.
+
+    wkhtmltopdf_label = tk.Label(settings_tab, text="wkhtmltopdf Path:")
+    wkhtmltopdf_entry = tk.Entry(settings_tab)
+    
+    save_button = tk.Button(
+        settings_tab, 
+        text="Save Settings",
+        command=lambda: save_settings(wkhtmltopdf_entry.get())
+        )
+
+    wkhtmltopdf_label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+    wkhtmltopdf_entry.grid(row=0, column=1, padx=10, pady=10)
+    save_button.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
+
+def create_main_tab(tab_control):
+    global selected_input_folder
+    global selected_output_folder
+    
+    main_tab = ttk.Frame(tab_control)
+    tab_control.add(main_tab, text="LaurelLeaf")
+    
+    global input_folder_entry
+    input_folder_entry= ttk.Entry(main_tab)
+    global output_folder_entry
+    output_folder_entry = ttk.Entry(main_tab)
  
-folder_path_label.grid(row=2, column=0, columnspan=10, sticky="w")
-open_button.grid(row=3, column=1, columnspan=1, sticky="w")
+    global skip_subfolders_var
+    skip_subfolders_var = tk.BooleanVar(value=False)  # Default value is False
+    global remove_urls_var
+    remove_urls_var = tk.BooleanVar(value=True)  # Default value is False
+    global skip_github_urls_var
+    skip_github_urls_var = tk.BooleanVar(value=True)  # Default value is False
 
-check_can_remove_external_links.grid(row=4, column=0, sticky="w", padx=10)
-check_can_remove_github_links.grid(row=5, column=0, sticky="w", padx=10, columnspan=5)
+    open_button = ttk.Button(
+        main_tab,
+        text='Select a Folder',
+        command=select_folder
+    )
 
-skip_subfolders_checkbox.grid(row=6, column=0, sticky="w", padx=10, columnspan=10)
+    check_can_remove_external_links = ttk.Checkbutton(
+        main_tab,
+        text='Remove links to external sources?',
+    variable=remove_urls_var
+    )
+
+    check_can_remove_github_links = ttk.Checkbutton(
+        main_tab,
+        text='Skip links to GitHub?: only matters if remove links is checked.',
+        variable=skip_github_urls_var,
+    )
+
+    skip_subfolders_checkbox = ttk.Checkbutton(
+        main_tab,
+        text='Skip Subfolders: If checked, you will be prompted before deletion.',
+        variable=skip_subfolders_var,
+    )
+    convert_button = ttk.Button(
+        main_tab,
+        text='Convert to PDF',
+        command=lambda: convert_to_pdf(selected_input_folder, selected_output_folder, wkhtmltopdf_path='F:\\wkhtmltopdf\\bin\\wkhtmltopdf.exe')
+    )
+
+    tk.Label(main_tab, text="Step: 1 choose folder to clean").grid(row=1, sticky="w")
+
+    # Create a Label widget to display the chosen folder path
+    global folder_path_label
+    folder_path_label = ttk.Label(main_tab, text="Chosen Folder: None")
+    
+    folder_path_label.grid(row=2, column=0, columnspan=10, sticky="w")
+    open_button.grid(row=3, column=1, columnspan=1, sticky="w")
+
+    check_can_remove_external_links.grid(row=4, column=0, sticky="w", padx=10)
+    check_can_remove_github_links.grid(row=5, column=0, sticky="w", padx=10, columnspan=5)
+
+    skip_subfolders_checkbox.grid(row=6, column=0, sticky="w", padx=10, columnspan=10)
 
 
-tk.Label(root, text="Step: 2 make pdf. (optional) ").grid(row=12, sticky="w")
+    tk.Label(main_tab, text="Step: 2 make pdf. (optional) ").grid(row=12, sticky="w")
 
 
-input_folder_label = ttk.Label(root, text="Input Folder:")
-output_folder_label = ttk.Label(root, text="Output Folder:")
+    input_folder_label = ttk.Label(main_tab, text="Input Folder:")
+    output_folder_label = ttk.Label(main_tab, text="Output Folder:")
 
 
-input_folder_label = ttk.Label(root, text="Input Folder:")
-input_folder_label.grid(row=14, column=0)
+    input_folder_label = ttk.Label(main_tab, text="Input Folder:")
+    input_folder_label.grid(row=14, column=0)
 
-output_folder_label = ttk.Label(root, text="Output Folder:")
-output_folder_label.grid(row=15, column=0)
+    output_folder_label = ttk.Label(main_tab, text="Output Folder:")
+    output_folder_label.grid(row=15, column=0)
 
 
-input_folder_button = ttk.Button(root, text="Browse", command=select_input_folder)
-input_folder_button.grid(row=14, column=2, sticky="w")
-input_folder_entry.grid(row=14, column=1)
+    input_folder_button = ttk.Button(main_tab, text="Browse", command=select_input_folder)
+    input_folder_button.grid(row=14, column=2, sticky="w")
+    input_folder_entry.grid(row=14, column=1)
 
-output_folder_button = ttk.Button(root, text="Browse", command=select_output_folder)
-output_folder_button.grid(row=15, column=2, sticky="w")
-output_folder_entry.grid(row=15, column=1)
+    output_folder_button = ttk.Button(main_tab, text="Browse", command=select_output_folder)
+    output_folder_button.grid(row=15, column=2, sticky="w")
+    output_folder_entry.grid(row=15, column=1)
 
-convert_button.grid(row=16, column=1, sticky="w")
+    convert_button.grid(row=16, column=1, sticky="w")
 
-center_window(root, window_width, window_height)
+tab_control = ttk.Notebook(root)
+
+# Create the main content tab (e.g., the file processing tab).
+# Add your widgets for the main functionality here.
+create_main_tab(tab_control)
+
+# Create the settings tab.
+create_settings_tab(tab_control)
+
+# Add the Notebook to your main window.
+tab_control.grid()
 
 root.mainloop()
