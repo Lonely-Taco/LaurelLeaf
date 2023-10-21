@@ -21,26 +21,30 @@ def load_settings():
     try:
         with open("settings.json", "r") as file:
             settings = json.load(file)
-            print(settings)
     except FileNotFoundError:
         pass
+    
     return settings
 
 def save_settings(settings):
    config = {
         "wkhtmltopdf_path": settings,
    }
-   with open("settings.json", "w") as file:
-        json.dump(config, file, indent=4)
-        
-def center_window(root, width, height):
-    screen_width = root.winfo_screenwidth()
-    screen_height = root.winfo_screenheight()
-    x = (screen_width - width) // 2
-    y = (screen_height - height) // 2
-    
-    root.geometry(f"{width}x{height}+{x}+{y}")
-    
+
+   try:
+    with open("settings.json", "w") as file:
+        json.dump(config, file, indent=4) 
+        showinfo(
+            title='Success',
+            message='Settings saved.'
+        )
+   except Exception as e:
+        showinfo(
+            title='Failure',
+            message=f'Failed to save settings. \n {e}'
+        )
+
+
 def remove_head_scripts(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
     head = soup.find('head')
@@ -108,26 +112,22 @@ def add_extra_div_after_body(html_content):
 def remove_attributes_from_div_section_main_tags(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
     
-    # Remove attributes from div tags
     div_tags = soup.find_all('div')
     for div_tag in div_tags:
         for attribute in list(div_tag.attrs):
             del div_tag[attribute]
     
-    # Remove attributes from section tags
     section_tags = soup.find_all('section')
     for section_tag in section_tags:
         for attribute in list(section_tag.attrs):
             del section_tag[attribute]
-    
-    # Remove attributes from main tags
+            
     main_tags = soup.find_all('main')
     for main_tag in main_tags:
         for attribute in list(main_tag.attrs):
             del main_tag[attribute]
 
     print(f"Removed attributes from divs, sections, and main tags: {len(div_tags)}, {len(section_tags)},  {len(main_tags)}")
-
     return str(soup)
 
 def remove_iframe_tags(html_content):
@@ -136,7 +136,7 @@ def remove_iframe_tags(html_content):
     if iframes:
         for frame in iframes:
             frame.extract()
-            
+                     
     print(f"Changed: {len(iframes)} iframes")
     
     return str(soup)
@@ -144,23 +144,20 @@ def remove_iframe_tags(html_content):
 def remove_hidden_button(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
 
-    # Remove button tags
     button_tags = soup.find_all('button')
     for button_tag in button_tags:
-        button_tag.extract()  # Remove the button element
+        button_tag.extract()
 
     print(f"Buttons removed: {len(button_tags)}")
     return str(soup)
 
 def remove_nav_and_div(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
-    
-    # Remove <nav></nav> tags
+
     nav = soup.find('nav')
     if nav:
         nav.extract()
     
-    # Check for a second <header>
     headers = soup.find_all('header')
     if len(headers) > 0:
         second_header = headers[0]
@@ -224,8 +221,6 @@ def process_files(folder):
     if not os.path.exists(files_folder):
         os.makedirs(files_folder)
     
-    
-     
     for file_name in html_files:
         file_path = os.path.join(folder, file_name)
         base_filename = os.path.splitext(file_name)[0]
@@ -281,14 +276,16 @@ def confirm_selection(folder):
     confirm_selection = askokcancel("Confirmation", f"Confirm path: '{folder}'")
     return confirm_selection
     
-def convert_to_pdf(input_folder, output_folder, wkhtmltopdf_path):
-    # settings = load_settings()
-    # if 'wkhtmltopdf_path' not in settings:
-    #     showinfo(
-    #             title='No wkhtmltopdf',
-    #             message=f'No wkhtmltopdf executable found'
-    #         )
-    #     return
+def convert_to_pdf(input_folder, output_folder):
+    settings = load_settings()
+    if 'wkhtmltopdf_path' not in settings:
+        showinfo(
+                title='No wkhtmltopdf',
+                message=f'No wkhtmltopdf executable found'
+            )
+        return
+    
+    wkhtmltopdf_path = settings["wkhtmltopdf_path"]
     
     options = {
         'page-size': 'Letter',
@@ -300,10 +297,9 @@ def convert_to_pdf(input_folder, output_folder, wkhtmltopdf_path):
         '--enable-local-file-access': None,
         '--disable-external-links': None,
         '--zoom': '.9',
-        '--minimum-font-size': '20',
+        '--minimum-font-size': '12',
         '--quiet': None,
     }
-    # wkhtmltopdf_path = settings["wkhtmltopdf_path"]
     configuration = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
 
     html_files = [f for f in os.listdir(input_folder) if f.endswith(".html")]
@@ -314,12 +310,12 @@ def convert_to_pdf(input_folder, output_folder, wkhtmltopdf_path):
 
         try:
             pdfkit.from_file(input_path, output_path, configuration=configuration, options=options)
-            print(f"{html_file} to PDF complete")
+            print(f"File: {html_file} to PDF complete")
         except Exception as e:
             e = e.with_traceback(e.__traceback__)
           
             print(f"Error converting {input_path} to PDF: {repr(e)}")
-  
+            
     showinfo(
         title='Conversion Complete',           
         message=f'{len(html_files)} HTML files converted to PDF.'
@@ -327,7 +323,6 @@ def convert_to_pdf(input_folder, output_folder, wkhtmltopdf_path):
 
 def select_input_folder():
     global selected_input_folder
-    global asset_path
     selected_input_folder = fd.askdirectory(title="Select Input Folder", initialdir="/")    
     if selected_input_folder:
         input_folder_entry.delete(0, tk.END)
@@ -341,6 +336,8 @@ def select_output_folder():
         output_folder_entry.insert(0, selected_output_folder)
         
 def select_folder():  
+    global selected_input_folder
+    global selected_output_folder
     folder = fd.askdirectory(
         title='Select a Folder',
         initialdir='/'
@@ -354,7 +351,6 @@ def select_folder():
         
         output_folder_entry.delete(0, tk.END)
         input_folder_entry.delete(0, tk.END)
-        
         
         output_folder_entry.insert(0, selected_output_folder)
         input_folder_entry.insert(0, selected_input_folder)
@@ -384,20 +380,17 @@ def select_folder():
             message=f'Process complete.'
         )   
     
-
-
-
-
-
 def create_settings_tab(tab_control):
+    settings = load_settings()
     settings_tab = ttk.Frame(tab_control)
     tab_control.add(settings_tab, text="Settings")
-
-    # Create and pack or grid your widgets for settings in the settings_tab frame.
-    # For example, you can add an entry field for wkhtmltopdf_path.
-
+    
     wkhtmltopdf_label = tk.Label(settings_tab, text="wkhtmltopdf Path:")
+    wkhtmltopdf_example1_label = tk.Label(settings_tab, text="Windows example path: C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe")
+    wkhtmltopdf_example2_label = tk.Label(settings_tab, text="MacOS example path: /usr/local/bin/wkhtmltopdf")
     wkhtmltopdf_entry = tk.Entry(settings_tab)
+    
+    wkhtmltopdf_entry.insert(0, settings["wkhtmltopdf_path"])
     
     save_button = tk.Button(
         settings_tab, 
@@ -407,26 +400,37 @@ def create_settings_tab(tab_control):
 
     wkhtmltopdf_label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
     wkhtmltopdf_entry.grid(row=0, column=1, padx=10, pady=10)
-    save_button.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
-
-def create_main_tab(tab_control):
-    global selected_input_folder
-    global selected_output_folder
     
-    main_tab = ttk.Frame(tab_control)
+    wkhtmltopdf_example1_label.grid(row=2, column=0,columnspan=10, padx=10, sticky="w")
+    wkhtmltopdf_example2_label.grid(row=3, column=0,columnspan=10, padx=10, sticky="w")
+
+    save_button.grid(row=5, column=0, columnspan=2, padx=10, pady=10, sticky="w")
+
+def create_app_tab(tab_control, main_tab): 
+    settings = load_settings()
+    if 'wkhtmltopdf_path' not in settings:
+        showinfo(
+                title='No wkhtmltopdf',
+                message=f'No wkhtmltopdf executable found. \n to convert to PDF a path to wkhtmltopdf is required'
+            )
+        
+    global input_folder_entry
+    global input_folder_entry
+    global input_folder_entry
+    global output_folder_entry
+    global remove_urls_var
+    global skip_github_urls_var
+    global skip_subfolders_var
+    global folder_path_label
+    
     tab_control.add(main_tab, text="LaurelLeaf")
     
-    global input_folder_entry
     input_folder_entry= ttk.Entry(main_tab)
-    global output_folder_entry
     output_folder_entry = ttk.Entry(main_tab)
  
-    global skip_subfolders_var
-    skip_subfolders_var = tk.BooleanVar(value=False)  # Default value is False
-    global remove_urls_var
     remove_urls_var = tk.BooleanVar(value=True)  # Default value is False
-    global skip_github_urls_var
     skip_github_urls_var = tk.BooleanVar(value=True)  # Default value is False
+    skip_subfolders_var = tk.BooleanVar(value=False)  # Default value is False
 
     open_button = ttk.Button(
         main_tab,
@@ -451,40 +455,30 @@ def create_main_tab(tab_control):
         text='Skip Subfolders: If checked, you will be prompted before deletion.',
         variable=skip_subfolders_var,
     )
-    convert_button = ttk.Button(
-        main_tab,
-        text='Convert to PDF',
-        command=lambda: convert_to_pdf(selected_input_folder, selected_output_folder, wkhtmltopdf_path='F:\\wkhtmltopdf\\bin\\wkhtmltopdf.exe')
-    )
-
-    tk.Label(main_tab, text="Step: 1 choose folder to clean").grid(row=1, sticky="w")
-
-    # Create a Label widget to display the chosen folder path
-    global folder_path_label
-    folder_path_label = ttk.Label(main_tab, text="Chosen Folder: None")
     
+    tk.Label(
+        main_tab, 
+        text="Step: 1 choose folder to clean"
+    ).grid(row=1, sticky="w")
+    
+    folder_path_label = ttk.Label(main_tab, text="Chosen Folder: None")
     folder_path_label.grid(row=2, column=0, columnspan=10, sticky="w")
-    open_button.grid(row=3, column=1, columnspan=1, sticky="w")
 
+    open_button.grid(row=3, column=1, columnspan=1, sticky="w")
     check_can_remove_external_links.grid(row=4, column=0, sticky="w", padx=10)
     check_can_remove_github_links.grid(row=5, column=0, sticky="w", padx=10, columnspan=5)
-
     skip_subfolders_checkbox.grid(row=6, column=0, sticky="w", padx=10, columnspan=10)
-
 
     tk.Label(main_tab, text="Step: 2 make pdf. (optional) ").grid(row=12, sticky="w")
 
-
     input_folder_label = ttk.Label(main_tab, text="Input Folder:")
     output_folder_label = ttk.Label(main_tab, text="Output Folder:")
-
 
     input_folder_label = ttk.Label(main_tab, text="Input Folder:")
     input_folder_label.grid(row=14, column=0)
 
     output_folder_label = ttk.Label(main_tab, text="Output Folder:")
     output_folder_label.grid(row=15, column=0)
-
 
     input_folder_button = ttk.Button(main_tab, text="Browse", command=select_input_folder)
     input_folder_button.grid(row=14, column=2, sticky="w")
@@ -493,19 +487,32 @@ def create_main_tab(tab_control):
     output_folder_button = ttk.Button(main_tab, text="Browse", command=select_output_folder)
     output_folder_button.grid(row=15, column=2, sticky="w")
     output_folder_entry.grid(row=15, column=1)
-
     convert_button.grid(row=16, column=1, sticky="w")
 
+def center_window(root, width, height):
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    x = (screen_width - width) // 2
+    y = (screen_height - height) // 2
+    
+    root.geometry(f"{width}x{height}+{x}+{y}")
+    
+    tab_control.config(height=y, width=x)
+    
 tab_control = ttk.Notebook(root)
 
-# Create the main content tab (e.g., the file processing tab).
-# Add your widgets for the main functionality here.
-create_main_tab(tab_control)
+main_tab = ttk.Frame(tab_control)
+convert_button = ttk.Button(
+        main_tab,
+        text='Convert to PDF',
+        command=lambda: convert_to_pdf(selected_input_folder, selected_output_folder)
+    )
 
-# Create the settings tab.
+create_app_tab(tab_control, main_tab)
 create_settings_tab(tab_control)
 
-# Add the Notebook to your main window.
+center_window(root, width=window_width, height=window_height)
+
 tab_control.grid()
 
 root.mainloop()
