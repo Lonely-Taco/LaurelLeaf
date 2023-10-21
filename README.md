@@ -24,12 +24,12 @@ Before using this program, make sure you have the following prerequisites:
 - BeautifulSoup4: You can install BeautifulSoup4 using pip:
 
   ```bash
-   python3 -m pip install beautifulsoup4
+  pip install beautifulsoup4
   ```
 
-   ```sh
-   pip install pdfkit
-   ```
+  ```bash
+  pip install pdfkit
+  ```
 
 ## Run the program:
 
@@ -52,6 +52,7 @@ python3 app.py
        - Skipping subfolders (if checked, you will be prompted before deletion).
 
 3. **Convert to PDF (Optional)**:
+   - Open the settings tab to add your path to wkhtmltopdf.
    - Provide input and output folders for PDF conversion.
    - Click the "Browse" buttons to select these folders.
    - Click the "Convert to PDF" button to start the conversion process. The program will generate PDF files from the cleaned HTML content.
