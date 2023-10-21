@@ -215,6 +215,52 @@ def remove_url_from_anchor_tags(html_content):
     print(f"Removed: {len(links)} links")
     return str(soup)
 
+def add_styles_to_html(html_content):
+    css_styles = '''
+            <style>
+                p {
+                    font-size: 14px;
+                }
+
+                h1 {
+                    font-size: 24px;
+                }
+
+                h2 {
+                    font-size: 20px;
+                }
+
+                h3 {
+                    font-size: 18px;
+                }
+
+                ul {
+                    list-style: disc;
+                }
+
+                ol {
+                    list-style: decimal;
+                }
+            </style>
+            '''
+
+
+    # Parse the HTML content with BeautifulSoup
+    soup = BeautifulSoup(html_content, 'html.parser')
+
+    # Find the <head> section or create one if it doesn't exist
+    head = soup.find('head')
+    if not head:
+        head = soup.new_tag('head')
+        soup.html.insert(0, head)
+
+    # Insert the CSS styles into the <head> section
+    style_tag = BeautifulSoup(css_styles, 'html.parser')
+    head.append(style_tag)
+
+    return str(soup)
+
+
 def process_files(folder):
     html_files = [f for f in os.listdir(folder) if f.endswith(".html")]
     files_folder = os.path.join(folder, "_files")
@@ -239,7 +285,8 @@ def process_files(folder):
         modified_content = add_extra_div_after_body(modified_content)
         modified_content = remove_attributes_from_div_section_main_tags(modified_content)
         modified_content = remove_hidden_button(modified_content)
-        # modified_content = remove_style_tags_with_data_emotion(modified_content)
+        modified_content = remove_style_tags_with_data_emotion(modified_content)
+        modified_content = add_styles_to_html(modified_content)
         
         if remove_urls_var.get():
             modified_content = remove_url_from_anchor_tags(modified_content)
@@ -290,14 +337,14 @@ def convert_to_pdf(input_folder, output_folder):
     options = {
         'page-size': 'Letter',
         'margin-top': '10mm',
-        'margin-right': '10mm',
+        'margin-right': '18mm',
         'margin-bottom': '10mm',
-        'margin-left': '10mm',
+        'margin-left': '18mm',
         '--debug-javascript': None,  
         '--enable-local-file-access': None,
         '--disable-external-links': None,
         '--zoom': '.9',
-        '--minimum-font-size': '12',
+        # '--minimum-font-size': '12',
         '--quiet': None,
     }
     configuration = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
