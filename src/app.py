@@ -88,10 +88,10 @@ def remove_head_meta_tags(html_content):
 
 def remove_style_tags_with_data_emotion(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
-    style_tags = soup.find_all('style', attrs={'data-emotion': True})
+    style_tags = soup.find_all('style')
     
     for style_tag in style_tags:
-        style_tag.extract()  # Remove the style tag from the HTML content
+        style_tag.extract()  
 
     print(f"Removed: {len(style_tags)} style tags with data-emotion")
 
@@ -217,33 +217,73 @@ def remove_url_from_anchor_tags(html_content):
 
 def add_styles_to_html(html_content):
     css_styles = '''
-            <style>
-                p {
-                    font-size: 14px;
-                }
+        <style>
+            p {
+                font-size: 22px;
+            }
 
-                h1 {
-                    font-size: 24px;
-                }
+            h1 {
+                font-size: 34px;
+            }
 
-                h2 {
-                    font-size: 20px;
-                }
+            h2 {
+                font-size: 30px;
+            }
 
-                h3 {
-                    font-size: 18px;
-                }
+            h3 {
+                font-size: 28px;
+            }
+            
+            h4 {
+                font-size: 26px;
+            }
 
-                ul {
-                    list-style: disc;
-                }
+            h5 {
+                font-size: 24px;
+            }
 
-                ol {
-                    list-style: decimal;
-                }
-            </style>
-            '''
+            h6 {
+                font-size: 22px;
+            }
 
+            h7 {
+                font-size: 20px;
+            }
+
+            h8 {
+                font-size: 18px;
+            }
+
+            h9 {
+                font-size: 16px;
+            }
+
+            ul {
+                list-style: disc;
+            }
+
+            ol {
+                list-style: decimal;
+            }
+
+            dl {
+                margin: 0;
+                padding: 0;
+            }
+
+            dt {
+                font-weight: bold;
+            }
+
+            dd {
+                margin: 0 0 1em;
+            }
+
+            code {
+                font-size: 20px;
+            }
+        </style>
+        '''
 
     # Parse the HTML content with BeautifulSoup
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -343,8 +383,8 @@ def convert_to_pdf(input_folder, output_folder):
         '--debug-javascript': None,  
         '--enable-local-file-access': None,
         '--disable-external-links': None,
-        '--zoom': '.9',
-        '--minimum-font-size': '20',
+        # '--zoom': '1',
+        # '--minimum-font-size': '20',
         '--quiet': None,
     }
     configuration = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
