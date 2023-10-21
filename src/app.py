@@ -344,7 +344,7 @@ def convert_to_pdf(input_folder, output_folder):
         '--enable-local-file-access': None,
         '--disable-external-links': None,
         '--zoom': '.9',
-        # '--minimum-font-size': '12',
+        '--minimum-font-size': '20',
         '--quiet': None,
     }
     configuration = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
