@@ -102,6 +102,13 @@ def add_extra_div_after_body(html_content):
     body = soup.find('body')
     
     if body:
+        divs = body.find_next_siblings('div')
+        for div in divs:
+            div.extract()  # Remove the <div> tag
+        
+        print(f"DIVS after the body: {len(divs)} count")
+    
+    if body:
         div = '<div></div>'
         div_element = BeautifulSoup(div, 'html.parser')    
         body.insert_after(div_element)
@@ -215,6 +222,7 @@ def remove_url_from_anchor_tags(html_content):
     print(f"Removed: {len(links)} links")
     return str(soup)
 
+# TODO add these to a page setup file.
 def add_styles_to_html(html_content):
     css_styles = '''
         <style>
@@ -266,6 +274,10 @@ def add_styles_to_html(html_content):
                 list-style: decimal;
             }
 
+            li {
+                font-size: 20px;
+            }
+            
             dl {
                 margin: 0;
                 padding: 0;
@@ -281,6 +293,10 @@ def add_styles_to_html(html_content):
 
             code {
                 font-size: 20px;
+            }
+            
+            span {
+                font-size: 18px; /* Adjust the font size as needed */
             }
         </style>
         '''
@@ -375,7 +391,7 @@ def convert_to_pdf(input_folder, output_folder):
     wkhtmltopdf_path = settings["wkhtmltopdf_path"]
     
     options = {
-        'page-size': 'Letter',
+        'page-size': 'A4',
         'margin-top': '10mm',
         'margin-right': '18mm',
         'margin-bottom': '10mm',
@@ -389,19 +405,43 @@ def convert_to_pdf(input_folder, output_folder):
     }
     configuration = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
 
+
     html_files = [f for f in os.listdir(input_folder) if f.endswith(".html")]
+    
+    output_folder_path = os.path.join(output_folder, "PDF")
+    
     for html_file in html_files:
         input_path = os.path.join(input_folder, html_file)
         output_file = os.path.splitext(html_file)[0] + '.pdf'
         output_path = os.path.join(output_folder, output_file)
-
-        try:
-            pdfkit.from_file(input_path, output_path, configuration=configuration, options=options)
-            print(f"File: {html_file} to PDF complete")
-        except Exception as e:
-            e = e.with_traceback(e.__traceback__)
-          
-            print(f"Error converting {input_path} to PDF: {repr(e)}")
+        
+        new_output_folder_path = os.path.join(output_folder_path, output_file)
+        
+        if not os.path.exists(output_folder_path ) and can_place_in_own_folder_var.get():
+            os.makedirs(output_folder_path) 
+            
+        if can_place_in_own_folder_var.get():      
+             # Check if the PDF file already exists
+            if not os.path.exists(new_output_folder_path):
+                try:
+                    pdfkit.from_file(input_path, new_output_folder_path, configuration=configuration, options=options)
+                    print(f"File: {html_file} to PDF complete")
+                except Exception as e:
+                    e = e.with_traceback(e.__traceback__)
+                    print(f"Error converting {input_path} to PDF: {repr(e)}")
+            else:
+                print(f"PDF file already exists for HTML file: {html_file}. Skipping conversion.")
+                
+        else:   
+           if not os.path.exists(output_path):
+            try:
+                pdfkit.from_file(input_path, output_path, configuration=configuration, options=options)
+                print(f"File: {html_file} to PDF complete")
+            except Exception as e:
+                e = e.with_traceback(e.__traceback__)
+                print(f"Error converting {input_path} to PDF: {repr(e)}")
+            else:
+                print(f"PDF file already exists for HTML file: {html_file}. Skipping conversion")
             
     showinfo(
         title='Conversion Complete',           
@@ -447,7 +487,7 @@ def select_folder():
         subfolders = get_subfolders(folder)
         if subfolders:
             for subfolder in subfolders:
-                 if subfolder != "_files" and not skip_subfolders_var.get(): 
+                 if subfolder != "_files" and not skip_subfolders_var.get() and subfolder != "PDF": 
                     files_path = os.path.join(folder, subfolder)
                     files = get_files(files_path)
                     copy_files(files, files_path ,destination_folder)
@@ -509,6 +549,8 @@ def create_app_tab(tab_control, main_tab):
     global skip_github_urls_var
     global skip_subfolders_var
     global folder_path_label
+    global can_place_in_own_folder_var
+
     
     tab_control.add(main_tab, text="LaurelLeaf")
     
@@ -518,6 +560,7 @@ def create_app_tab(tab_control, main_tab):
     remove_urls_var = tk.BooleanVar(value=True)  # Default value is False
     skip_github_urls_var = tk.BooleanVar(value=True)  # Default value is False
     skip_subfolders_var = tk.BooleanVar(value=False)  # Default value is False
+    can_place_in_own_folder_var = tk.BooleanVar(value=True)  # Default value is TRUE
 
     open_button = ttk.Button(
         main_tab,
@@ -541,6 +584,12 @@ def create_app_tab(tab_control, main_tab):
         main_tab,
         text='Skip Subfolders: If checked, you will be prompted before deletion.',
         variable=skip_subfolders_var,
+    )
+    
+    check_can_place_in_own_folder = ttk.Checkbutton(
+        main_tab,
+        text='Place PDFs in their own folder.',
+        variable=can_place_in_own_folder_var,
     )
     
     tk.Label(
@@ -569,12 +618,13 @@ def create_app_tab(tab_control, main_tab):
 
     input_folder_button = ttk.Button(main_tab, text="Browse", command=select_input_folder)
     input_folder_button.grid(row=14, column=2, sticky="w")
-    input_folder_entry.grid(row=14, column=1)
+    input_folder_entry.grid(row=14, column=1, sticky="w")
 
     output_folder_button = ttk.Button(main_tab, text="Browse", command=select_output_folder)
     output_folder_button.grid(row=15, column=2, sticky="w")
-    output_folder_entry.grid(row=15, column=1)
+    output_folder_entry.grid(row=15, column=1,  sticky="w")
     convert_button.grid(row=16, column=1, sticky="w")
+    check_can_place_in_own_folder.grid(row=17, column=1, sticky="w")
 
 def center_window(root, width, height):
     screen_width = root.winfo_screenwidth()
