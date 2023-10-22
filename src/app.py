@@ -391,7 +391,7 @@ def convert_to_pdf(input_folder, output_folder):
     wkhtmltopdf_path = settings["wkhtmltopdf_path"]
     
     options = {
-        'page-size': 'A4',
+        'page-size': 'Letter',
         'margin-top': '10mm',
         'margin-right': '18mm',
         'margin-bottom': '10mm',
