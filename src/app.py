@@ -13,8 +13,8 @@ root = tk.Tk()
 root.title('LaurelLeaf')
 root.resizable(False,False)
 
-window_width = 600
-window_height = 400
+window_width = 650
+window_height = 500
 
 def load_settings():
     settings = {}
@@ -126,6 +126,16 @@ def remove_attributes_from_div_section_main_tags(html_content):
     
     section_tags = soup.find_all('section')
     for section_tag in section_tags:
+        for attribute in list(section_tag.attrs):
+            del section_tag[attribute]
+    
+    article_tags = soup.find_all('article')
+    for section_tag in article_tags:
+        for attribute in list(section_tag.attrs):
+            del section_tag[attribute]
+    
+    body = soup.find_all('body')
+    for section_tag in body:
         for attribute in list(section_tag.attrs):
             del section_tag[attribute]
             
@@ -316,6 +326,30 @@ def add_styles_to_html(html_content):
 
     return str(soup)
 
+def set_image_dimensions(html_content):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    max_width = 842
+    max_height = 595
+    min_width = 48
+    min_height = 48
+    img_tags = soup.find_all('img')
+
+    for img in img_tags:
+
+        if 'width' not in img.attrs:
+            img['width'] = max_width
+        if 'height' not in img.attrs:
+            img['height'] = max_height
+            
+        if int(img['width'])  > max_width or int(img['height']) > max_height:
+            img['width'] = max_width
+            img['height'] = max_height
+            
+        if int(img['width']) < min_width or int(img['height']) < min_height:
+            img['width'] = min_width
+            img['height'] = min_height
+
+    return str(soup)
 
 def process_files(folder):
     html_files = [f for f in os.listdir(folder) if f.endswith(".html")]
@@ -343,6 +377,7 @@ def process_files(folder):
         modified_content = remove_hidden_button(modified_content)
         modified_content = remove_style_tags_with_data_emotion(modified_content)
         modified_content = add_styles_to_html(modified_content)
+        modified_content = set_image_dimensions(modified_content)
         
         if remove_urls_var.get():
             modified_content = remove_url_from_anchor_tags(modified_content)
@@ -400,8 +435,8 @@ def convert_to_pdf(input_folder, output_folder):
         '--enable-local-file-access': None,
         '--disable-external-links': None,
         # '--zoom': '1',
-        # '--minimum-font-size': '20',
-        '--quiet': None,
+        '--minimum-font-size': '20',
+        'log-level': 'warn',
     }
     configuration = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
 
@@ -634,7 +669,7 @@ def center_window(root, width, height):
     
     root.geometry(f"{width}x{height}+{x}+{y}")
     
-    tab_control.config(height=y, width=x)
+    tab_control.config(height=window_height-60, width=window_width-50)
     
 tab_control = ttk.Notebook(root)
 
