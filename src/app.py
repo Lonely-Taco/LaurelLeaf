@@ -11,7 +11,7 @@ import json
 
 root = tk.Tk()
 root.title('LaurelLeaf')
-root.resizable(False,False)
+root.resizable(True,False)
 
 window_width = 650
 window_height = 500
@@ -44,6 +44,30 @@ def save_settings(settings):
             message=f'Failed to save settings. \n {e}'
         )
 
+def remove_invisible_characters(html_content):
+
+    invisible_char_pattern = re.compile(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+')
+    invisible_unicode_pattern = re.compile(u'[\u200B-\u200D\uFEFF\u00A0]+', re.DOTALL)
+    invisible_char_matches = invisible_char_pattern.findall(html_content)
+    invisible_unicode_matches = invisible_unicode_pattern.findall(html_content)
+    
+    for match in invisible_unicode_matches:
+        html_content = html_content.replace(match, ' ')
+    
+    for match in invisible_char_matches:
+        html_content = html_content.replace(match, ' ')
+
+    return html_content
+
+def remove_tag_by_text(html_content, tag_name, target_text):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    tags_to_remove = soup.find_all(tag_name, text=target_text)
+
+    for tag in tags_to_remove:
+        tag.decompose()
+
+    cleaned_html = str(soup)
+    return cleaned_html
 
 def remove_head_scripts(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -143,6 +167,16 @@ def remove_attributes_from_div_section_main_tags(html_content):
     for main_tag in main_tags:
         for attribute in list(main_tag.attrs):
             del main_tag[attribute]
+    
+    header_tags = soup.find_all('header')
+    for tag in header_tags:
+        for attribute in list(tag.attrs):
+            del tag[attribute]
+    
+    header_tags = soup.find_all('header')
+    for tag in header_tags:
+        for attribute in list(tag.attrs):
+            del tag[attribute]
 
     print(f"Removed attributes from divs, sections, and main tags: {len(div_tags)}, {len(section_tags)},  {len(main_tags)}")
     return str(soup)
@@ -237,7 +271,7 @@ def add_styles_to_html(html_content):
     css_styles = '''
         <style>
             p {
-                font-size: 22px;
+                font-size: 20px;
             }
 
             h1 {
@@ -308,6 +342,11 @@ def add_styles_to_html(html_content):
             span {
                 font-size: 18px; /* Adjust the font size as needed */
             }
+            
+             img {
+                max-width: 100%;
+                height: auto; /* Maintain aspect ratio */
+            }
         </style>
         '''
 
@@ -351,6 +390,20 @@ def set_image_dimensions(html_content):
 
     return str(soup)
 
+
+def put_article_in_one_section(html_content):
+    
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    article = soup.find('article')
+    section = article.find('section')
+    # first_div = section.find('div')
+    # second_div = first_div.find('div')
+    # third_div = second_div.find('div')
+    article['style'] = 'width: 700px;' 
+
+    return str(soup)
+
 def process_files(folder):
     html_files = [f for f in os.listdir(folder) if f.endswith(".html")]
     files_folder = os.path.join(folder, "_files")
@@ -365,6 +418,7 @@ def process_files(folder):
             html_content = file.read()
 
         modified_content = remove_head_scripts(html_content)
+        modified_content = remove_tag_by_text(modified_content,'a' ,"Skip to Content")
         modified_content = remove_nav_and_div(modified_content)
         modified_content = remove_head_links(modified_content)
         modified_content = remove_head_meta_tags(modified_content)
@@ -377,7 +431,9 @@ def process_files(folder):
         modified_content = remove_hidden_button(modified_content)
         modified_content = remove_style_tags_with_data_emotion(modified_content)
         modified_content = add_styles_to_html(modified_content)
-        modified_content = set_image_dimensions(modified_content)
+        # modified_content = set_image_dimensions(modified_content)
+        modified_content = put_article_in_one_section(modified_content)
+        modified_content = remove_invisible_characters(modified_content)
         
         if remove_urls_var.get():
             modified_content = remove_url_from_anchor_tags(modified_content)
@@ -646,18 +702,19 @@ def create_app_tab(tab_control, main_tab):
     output_folder_label = ttk.Label(main_tab, text="Output Folder:")
 
     input_folder_label = ttk.Label(main_tab, text="Input Folder:")
-    input_folder_label.grid(row=14, column=0)
+    input_folder_label.grid(row=14, column=0, sticky="w")
 
     output_folder_label = ttk.Label(main_tab, text="Output Folder:")
-    output_folder_label.grid(row=15, column=0)
+    output_folder_label.grid(row=15, column=0, sticky="w")
 
     input_folder_button = ttk.Button(main_tab, text="Browse", command=select_input_folder)
     input_folder_button.grid(row=14, column=2, sticky="w")
-    input_folder_entry.grid(row=14, column=1, sticky="w")
+    input_folder_entry.grid(row=14, column=1, columnspan=5, sticky="w")
 
     output_folder_button = ttk.Button(main_tab, text="Browse", command=select_output_folder)
     output_folder_button.grid(row=15, column=2, sticky="w")
-    output_folder_entry.grid(row=15, column=1,  sticky="w")
+    output_folder_entry.grid(row=15, column=1, columnspan=5, sticky="w")
+    
     convert_button.grid(row=16, column=1, sticky="w")
     check_can_place_in_own_folder.grid(row=17, column=1, sticky="w")
 
@@ -674,6 +731,7 @@ def center_window(root, width, height):
 tab_control = ttk.Notebook(root)
 
 main_tab = ttk.Frame(tab_control)
+
 convert_button = ttk.Button(
         main_tab,
         text='Convert to PDF',
