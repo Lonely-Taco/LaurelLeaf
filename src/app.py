@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 import re
 import pdfkit
 import json
+from style import css_styles
 
 root = tk.Tk()
 root.title('LaurelLeaf')
@@ -268,98 +269,13 @@ def remove_url_from_anchor_tags(html_content):
 
 # TODO add these to a page setup file.
 def add_styles_to_html(html_content):
-    css_styles = '''
-        <style>
-            p {
-                font-size: 20px;
-            }
 
-            h1 {
-                font-size: 34px;
-            }
-
-            h2 {
-                font-size: 30px;
-            }
-
-            h3 {
-                font-size: 28px;
-            }
-            
-            h4 {
-                font-size: 26px;
-            }
-
-            h5 {
-                font-size: 24px;
-            }
-
-            h6 {
-                font-size: 22px;
-            }
-
-            h7 {
-                font-size: 20px;
-            }
-
-            h8 {
-                font-size: 18px;
-            }
-
-            h9 {
-                font-size: 16px;
-            }
-
-            ul {
-                list-style: disc;
-            }
-
-            ol {
-                list-style: decimal;
-            }
-
-            li {
-                font-size: 20px;
-            }
-            
-            dl {
-                margin: 0;
-                padding: 0;
-            }
-
-            dt {
-                font-weight: bold;
-            }
-
-            dd {
-                margin: 0 0 1em;
-            }
-
-            code {
-                font-size: 20px;
-            }
-            
-            span {
-                font-size: 18px; /* Adjust the font size as needed */
-            }
-            
-             img {
-                max-width: 100%;
-                height: auto; /* Maintain aspect ratio */
-            }
-        </style>
-        '''
-
-    # Parse the HTML content with BeautifulSoup
     soup = BeautifulSoup(html_content, 'html.parser')
-
-    # Find the <head> section or create one if it doesn't exist
     head = soup.find('head')
     if not head:
         head = soup.new_tag('head')
         soup.html.insert(0, head)
-
-    # Insert the CSS styles into the <head> section
+        
     style_tag = BeautifulSoup(css_styles, 'html.parser')
     head.append(style_tag)
 
@@ -397,9 +313,6 @@ def put_article_in_one_section(html_content):
     
     article = soup.find('article')
     section = article.find('section')
-    # first_div = section.find('div')
-    # second_div = first_div.find('div')
-    # third_div = second_div.find('div')
     article['style'] = 'width: 700px;' 
 
     return str(soup)
@@ -708,12 +621,12 @@ def create_app_tab(tab_control, main_tab):
     output_folder_label.grid(row=15, column=0, sticky="w")
 
     input_folder_button = ttk.Button(main_tab, text="Browse", command=select_input_folder)
-    input_folder_button.grid(row=14, column=2, sticky="w")
-    input_folder_entry.grid(row=14, column=1, columnspan=5, sticky="w")
+    input_folder_button.grid(row=14, column=1, sticky="w")
+    input_folder_entry.grid(row=14, column=2, sticky="w")
 
     output_folder_button = ttk.Button(main_tab, text="Browse", command=select_output_folder)
-    output_folder_button.grid(row=15, column=2, sticky="w")
-    output_folder_entry.grid(row=15, column=1, columnspan=5, sticky="w")
+    output_folder_button.grid(row=15, column=1, sticky="w")
+    output_folder_entry.grid(row=15, column=2, sticky="w")
     
     convert_button.grid(row=16, column=1, sticky="w")
     check_can_place_in_own_folder.grid(row=17, column=1, sticky="w")
