@@ -469,13 +469,17 @@ def select_output_folder():
 def select_folder():  
     global selected_input_folder
     global selected_output_folder
+    global selected_folder
     folder = fd.askdirectory(
         title='Select a Folder',
         initialdir='/'
     )
     if folder:
         folder_path_label.config(text=f"Chosen Folder: {folder}")  # Update the label with the chosen folder path
-
+        selected_folder = folder
+   
+    
+def process_folder(folder): 
     if folder and confirm_selection(folder):   
         selected_input_folder = folder
         selected_output_folder = folder
@@ -554,6 +558,7 @@ def create_app_tab(tab_control, main_tab):
     global skip_subfolders_var
     global folder_path_label
     global can_place_in_own_folder_var
+   
 
     
     tab_control.add(main_tab, text="LaurelLeaf")
@@ -570,6 +575,12 @@ def create_app_tab(tab_control, main_tab):
         main_tab,
         text='Select a Folder',
         command=select_folder
+    )
+
+    process_button = ttk.Button(
+        main_tab,
+        text='Process files',
+        command= lambda: process_folder(selected_folder),
     )
 
     check_can_remove_external_links = ttk.Checkbutton(
@@ -604,6 +615,7 @@ def create_app_tab(tab_control, main_tab):
     folder_path_label = ttk.Label(main_tab, text="Chosen Folder: None")
     folder_path_label.grid(row=2, column=0, columnspan=10, sticky="w")
 
+    process_button.grid(row=3, column=0, sticky="w")
     open_button.grid(row=3, column=1, columnspan=1, sticky="w")
     check_can_remove_external_links.grid(row=4, column=0, sticky="w", padx=10)
     check_can_remove_github_links.grid(row=5, column=0, sticky="w", padx=10, columnspan=5)
