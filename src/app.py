@@ -477,12 +477,12 @@ def select_folder():
     if folder:
         folder_path_label.config(text=f"Chosen Folder: {folder}")  # Update the label with the chosen folder path
         selected_folder = folder
+        selected_input_folder = folder
+        selected_output_folder = folder
    
     
 def process_folder(folder): 
     if folder and confirm_selection(folder):   
-        selected_input_folder = folder
-        selected_output_folder = folder
         
         output_folder_entry.delete(0, tk.END)
         input_folder_entry.delete(0, tk.END)
