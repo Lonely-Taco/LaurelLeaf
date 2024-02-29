@@ -403,7 +403,6 @@ def convert_to_pdf(input_folder, output_folder):
         '--debug-javascript': None,  
         '--enable-local-file-access': None,
         '--disable-external-links': None,
-        # '--zoom': '1',
         '--minimum-font-size': '20',
         'log-level': 'warn',
     }
@@ -610,17 +609,19 @@ def create_app_tab(tab_control, main_tab):
     tk.Label(
         main_tab, 
         text="Step: 1 choose folder to clean"
-    ).grid(row=1, sticky="w")
+    ).grid(row=0, sticky="w")
     
     folder_path_label = ttk.Label(main_tab, text="Chosen Folder: None")
-    folder_path_label.grid(row=2, column=0, columnspan=10, sticky="w")
+    folder_path_label.grid(row=1, column=0, columnspan=10, sticky="w")
+    
+    open_button.grid(row=2, column=0, columnspan=1, sticky="w")
 
-    process_button.grid(row=3, column=0, sticky="w")
-    open_button.grid(row=3, column=1, columnspan=1, sticky="w")
-    check_can_remove_external_links.grid(row=4, column=0, sticky="w", padx=10)
-    check_can_remove_github_links.grid(row=5, column=0, sticky="w", padx=10, columnspan=5)
-    skip_subfolders_checkbox.grid(row=6, column=0, sticky="w", padx=10, columnspan=10)
+    process_button.grid(row=2, column=1, sticky="w")
+    check_can_remove_external_links.grid(row=6, column=0, sticky="w", padx=10)
+    check_can_remove_github_links.grid(row=7, column=0, sticky="w", padx=10, columnspan=5)
+    skip_subfolders_checkbox.grid(row=8, column=0, sticky="w", padx=10, columnspan=10)
 
+    
     tk.Label(main_tab, text="Step: 2 make pdf. (optional) ").grid(row=12, sticky="w")
 
     input_folder_label = ttk.Label(main_tab, text="Input Folder:")
