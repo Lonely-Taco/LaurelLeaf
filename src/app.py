@@ -145,12 +145,14 @@ def remove_attributes_from_div_section_main_tags(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
     
     div_tags = soup.find_all('div')
+    
     for div_tag in div_tags:
         for attribute in list(div_tag.attrs):
             del div_tag[attribute]
     
     section_tags = soup.find_all('section')
     for section_tag in section_tags:
+        
         for attribute in list(section_tag.attrs):
             del section_tag[attribute]
     
@@ -174,12 +176,12 @@ def remove_attributes_from_div_section_main_tags(html_content):
         for attribute in list(tag.attrs):
             del tag[attribute]
     
-    header_tags = soup.find_all('header')
-    for tag in header_tags:
-        for attribute in list(tag.attrs):
-            del tag[attribute]
+    nav_tags = soup.find_all('nav')
+    for tag in nav_tags:
+        if tag:
+            tag.extract()
 
-    print(f"Removed attributes from divs, sections, and main tags: {len(div_tags)}, {len(section_tags)},  {len(main_tags)}")
+    print(f"Removed attributes from divs, sections, and main tags: {len(div_tags)}, {len(section_tags)},  {len(main_tags), {len(nav_tags)}}")
     return str(soup)
 
 def remove_iframe_tags(html_content):
