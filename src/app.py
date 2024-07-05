@@ -314,7 +314,6 @@ def put_article_in_one_section(html_content):
     soup = BeautifulSoup(html_content, 'html.parser')
     
     article = soup.find('article')
-    section = article.find('section')
     article['style'] = 'width: 700px;' 
 
     return str(soup)
@@ -347,7 +346,7 @@ def process_files(folder):
         modified_content = remove_style_tags_with_data_emotion(modified_content)
         modified_content = add_styles_to_html(modified_content)
         # modified_content = set_image_dimensions(modified_content)
-        modified_content = put_article_in_one_section(modified_content)
+        # modified_content = put_article_in_one_section(modified_content)
         modified_content = remove_invisible_characters(modified_content)
         
         if remove_urls_var.get():
@@ -517,7 +516,7 @@ def process_folder(folder):
         )   
     
 def create_settings_tab(tab_control):
-    settings = load_settings()
+    # settings = load_settings()
     settings_tab = ttk.Frame(tab_control)
     tab_control.add(settings_tab, text="Settings")
     
@@ -526,7 +525,7 @@ def create_settings_tab(tab_control):
     wkhtmltopdf_example2_label = tk.Label(settings_tab, text="MacOS example path: /usr/local/bin/wkhtmltopdf")
     wkhtmltopdf_entry = tk.Entry(settings_tab)
     
-    wkhtmltopdf_entry.insert(0, settings["wkhtmltopdf_path"])
+    # wkhtmltopdf_entry.insert(0, settings["wkhtmltopdf_path"])
     
     save_button = tk.Button(
         settings_tab, 
@@ -543,12 +542,12 @@ def create_settings_tab(tab_control):
     save_button.grid(row=5, column=0, columnspan=2, padx=10, pady=10, sticky="w")
 
 def create_app_tab(tab_control, main_tab): 
-    settings = load_settings()
-    if 'wkhtmltopdf_path' not in settings:
-        showinfo(
-                title='No wkhtmltopdf',
-                message=f'No wkhtmltopdf executable found. \n to convert to PDF a path to wkhtmltopdf is required'
-            )
+    # settings = load_settings()
+    # if 'wkhtmltopdf_path' not in settings:
+    #     showinfo(
+    #             title='No wkhtmltopdf',
+    #             message=f'No wkhtmltopdf executable found. \n to convert to PDF a path to wkhtmltopdf is required'
+    #         )
         
     global input_folder_entry
     global input_folder_entry
